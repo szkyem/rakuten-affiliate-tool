@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>楽天アフィリエイト まとめ</title>
+<style>
+  :root{
+    --pink:#e93a7d; --pink2:#f06292;
+    --blue:#29a7d3; --orange:#f4794a; --gray:#7b93a3; --teal:#25b6a8;
+    --ink:#2b2b2b; --muted:#8a8a8a; --line:#e6e6e6; --bg:#f5f6f8; --card:#fff;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Segoe UI","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;
+    color:var(--ink);background:var(--bg);}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 20px 80px;}
+  h1{font-size:22px;margin:0 0 2px;}
+  .sub{color:var(--muted);font-size:12px;margin-bottom:18px;}
+  .dots span{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;}
+  .dots .d1{background:var(--pink);} .dots .d2{background:var(--orange);border-radius:0;}
+  .dots .d3{background:var(--blue);}
+
+  /* 取り込みバー */
+  .loader{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:16px 18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:22px;}
+  .loader .lead{font-weight:600;font-size:14px;margin-right:4px;}
+  input[type=file]{font-size:13px;}
+  button.act{background:var(--pink);color:#fff;border:none;border-radius:8px;
+    padding:9px 18px;font-size:14px;font-weight:600;cursor:pointer;}
+  button.act:disabled{background:#ddd;cursor:not-allowed;}
+  button.ghost{background:#fff;color:var(--pink);border:1px solid var(--pink);border-radius:8px;
+    padding:8px 14px;font-size:13px;cursor:pointer;}
+  .status{font-size:12px;color:var(--muted);}
+  .status.ok{color:var(--teal);font-weight:600;}
+  .status.err{color:#d64545;font-weight:600;}
+
+  .hidden{display:none!important;}
+
+  /* KPIカード */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+  .kpi{border-radius:14px;color:#fff;padding:16px 18px;position:relative;overflow:hidden;min-height:92px;}
+  .kpi .lbl{font-size:13px;font-weight:600;opacity:.95;}
+  .kpi .val{font-size:26px;font-weight:800;margin-top:14px;letter-spacing:.5px;}
+  .kpi.k1{background:linear-gradient(135deg,#e93a7d,#f4608f);}
+  .kpi.k2{background:linear-gradient(135deg,#1aa6d6,#3fc0e6);}
+  .kpi.k3{background:linear-gradient(135deg,#f4794a,#f79a6f);}
+  .kpi.k4{background:linear-gradient(135deg,#6f8a9b,#8aa2b1);}
+  .kpi .ico{position:absolute;right:14px;top:14px;font-size:20px;opacity:.9;}
+
+  /* パネル */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:22px;}
+  .panel h2{font-size:16px;margin:0 0 4px;}
+  .panel .note{font-size:12px;color:var(--muted);margin:0 0 14px;}
+  .tab-mark{border-left:4px solid var(--pink);padding-left:10px;}
+
+  /* 期間フィルタ */
+  .filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:16px;}
+  .filters .f label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px;}
+  .filters input[type=date],.filters select{padding:7px 9px;border:1px solid var(--line);border-radius:7px;font-size:13px;}
+  .rangebtns{display:flex;gap:6px;}
+  .rangebtns button{font-size:12px;padding:6px 10px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;color:#555;}
+  .rangebtns button:hover{border-color:var(--pink);color:var(--pink);}
+
+  /* テーブル */
+  .tablewrap{overflow-x:auto;}
+  table{border-collapse:collapse;width:100%;font-size:13px;}
+  th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;}
+  th{background:#fafafa;color:#555;font-weight:600;cursor:pointer;user-select:none;position:sticky;top:0;}
+  th.l,td.l{text-align:left;white-space:normal;}
+  td.name{max-width:420px;}
+  td.name a{color:var(--pink);text-decoration:none;}
+  td.name a:hover{text-decoration:underline;}
+  .genrehead td{background:#fff4f8;font-weight:700;color:var(--pink);text-align:left;}
+  .roomtag{display:inline-block;background:#ffe3ef;color:var(--pink);border-radius:4px;padding:1px 6px;font-size:11px;}
+  .num{font-variant-numeric:tabular-nums;}
+  tbody tr:hover td{background:#fcfcfc;}
+
+  /* 円グラフ凡例 */
+  .genre-flex{display:flex;gap:26px;flex-wrap:wrap;align-items:center;}
+  .legend{font-size:13px;}
+  .legend .row{display:flex;align-items:center;gap:8px;margin:5px 0;}
+  .legend .sw{width:12px;height:12px;border-radius:3px;display:inline-block;}
+  .legend .pv{color:var(--muted);margin-left:auto;padding-left:18px;}
+  .toggle{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:12px;}
+  .toggle button{border:none;background:#fff;padding:7px 16px;font-size:13px;cursor:pointer;color:#666;}
+  .toggle button.on{background:var(--pink);color:#fff;font-weight:600;}
+
+  .searchbox{padding:7px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;width:260px;max-width:100%;}
+  .empty{padding:40px;text-align:center;color:var(--muted);}
+  #pager button{border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 12px;cursor:pointer;font-size:13px;color:#555;}
+  #pager button:hover:not(:disabled){border-color:var(--pink);color:var(--pink);}
+  #pager button:disabled{opacity:.4;cursor:not-allowed;}
+  #pager .cur{color:var(--pink);font-weight:700;}
+  .thumb{width:46px;height:46px;border-radius:6px;object-fit:cover;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:11px;overflow:hidden;}
+  .thumb img{width:100%;height:100%;object-fit:cover;}
+  .apibox{background:#fbfbfd;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
+  .apititle{font-size:13px;font-weight:700;margin-bottom:8px;}
+  .apirow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .apiinput{padding:7px 9px;border:1px solid var(--line);border-radius:7px;font-size:13px;width:200px;}
+  .apihelp{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6;}
+  @media(max-width:760px){.kpis{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>アフィリエイトレポート</h1>
+  <div class="dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
+  <div class="sub">楽天アフィリエイトの成果CSVを、自分用にまとめるツール（完全ローカル・試作v1）</div>
+
+  <!-- 取り込みバー -->
+  <div class="loader">
+    <span class="lead">① CSVを選ぶ</span>
+    <input type="file" id="file" accept=".csv,text/csv" multiple>
+    <button class="act" id="btnRun" disabled>② 追加でまとめる ▶</button>
+    <button class="ghost" id="btnClear">全データを消去</button>
+    <span class="status" id="status">CSVファイルを選んでください</span>
+  </div>
+  <div class="sub" id="storeInfo" style="margin-top:-14px;margin-bottom:22px;"></div>
+
+  <!-- 結果 -->
+  <div id="result" class="hidden">
+
+    <!-- ===== イメージ1：サマリ ===== -->
+    <div class="kpis">
+      <div class="kpi k1"><span class="ico">¥</span><div class="lbl">売上金額</div><div class="val" id="kpiSales">–</div></div>
+      <div class="kpi k2"><span class="ico">★</span><div class="lbl">成果報酬</div><div class="val" id="kpiReward">–</div></div>
+      <div class="kpi k3"><span class="ico">▤</span><div class="lbl">売上件数</div><div class="val" id="kpiCount">–</div></div>
+      <div class="kpi k4"><span class="ico">%</span><div class="lbl">平均料率(実質)</div><div class="val" id="kpiRate">–</div></div>
+    </div>
+
+    <div class="panel">
+      <h2 class="tab-mark">期間で絞る</h2>
+      <p class="note">開始日〜終了日を指定すると、上のKPI・グラフ・下の集計表すべてが連動します。</p>
+      <div class="filters">
+        <div class="f"><label>開始日</label><input type="date" id="dFrom"></div>
+        <div class="f"><label>終了日</label><input type="date" id="dTo"></div>
+        <div class="f"><label>ジャンル</label><select id="fGenre"><option value="">全て</option></select></div>
+        <div class="f"><label>計測ID</label><select id="fRoom">
+          <option value="">全て</option><option value="room">楽天ROOMのみ</option><option value="other">ROOM以外のみ</option>
+        </select></div>
+        <div class="f"><label>ステータス</label><select id="fStatus">
+          <option value="">全て</option><option value="確定">確定のみ</option><option value="未確定">未確定のみ</option>
+          <option value="除破棄">破棄を除く</option><option value="破棄">破棄のみ</option>
+        </select></div>
+        <div class="rangebtns">
+          <button data-r="all">全期間</button>
+          <button data-r="7">直近7日</button>
+          <button data-r="30">直近30日</button>
+          <button data-r="h1">前半15日</button>
+          <button data-r="h2">後半</button>
+        </div>
+      </div>
+      <h2 class="tab-mark" style="margin-top:8px;">売上金額（日別）</h2>
+      <div id="dailyChart"></div>
+    </div>
+
+    <!-- ===== イメージ3：注文明細（ジャンル別・こだわり） ===== -->
+    <div class="panel">
+      <h2 class="tab-mark">注文明細 ｜ 商品ジャンル別</h2>
+      <p class="note">何がどれだけ売れたか。円グラフの割合と、下の商品別集計（楽天ROOM / ROOM以外の内訳つき）で確認できます。</p>
+      <div class="toggle" id="pieToggle">
+        <button data-m="sales" class="on">売上金額で見る</button>
+        <button data-m="count">件数で見る</button>
+      </div>
+      <div class="genre-flex">
+        <div id="pieChart"></div>
+        <div class="legend" id="pieLegend"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 class="tab-mark">商品別 集計表</h2>
+      <p class="note">商品名クリックで商品ページへ（画像取得後はアフィリエイトリンク）。<span id="tblCount"></span></p>
+
+      <div class="apibox">
+        <div class="apititle">🖼️ 商品画像・リンクを取得（楽天API）</div>
+        <div class="apirow">
+          <input type="text" id="appId" class="apiinput" placeholder="楽天アプリID（必須）">
+          <input type="text" id="affId" class="apiinput" placeholder="アフィリエイトID（任意）">
+          <button class="act" id="btnFetchImg">画像・リンクを取得 ▶</button>
+          <button class="ghost" id="btnStopImg" style="display:none;">中止</button>
+          <span class="status" id="apiStatus"></span>
+        </div>
+        <div class="apihelp">アプリIDは <b>楽天ウェブサービス（webservice.rakuten.co.jp）</b> で無料取得。取得結果は保存され、次回は未取得の商品だけ取りに行きます。楽天トラベル/GORA・商品名なしは対象外。</div>
+      </div>
+      <div style="margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+        <input type="text" id="search" class="searchbox" placeholder="商品名・ショップ名で絞り込み">
+        <label style="font-size:12px;color:#8a8a8a;">並び替え
+          <select id="sortSel" style="padding:7px 9px;border:1px solid #e6e6e6;border-radius:7px;font-size:13px;margin-left:4px;">
+            <option value="sales">売上が多い順</option>
+            <option value="reward">成果報酬が多い順</option>
+            <option value="count">合計件数が多い順</option>
+            <option value="room">ROOM件数が多い順</option>
+            <option value="other">ROOM以外が多い順</option>
+            <option value="rate">平均料率が高い順</option>
+            <option value="genre">ジャンル別にまとめる</option>
+            <option value="name">商品名（あいうえお順）</option>
+          </select>
+        </label>
+        <label style="font-size:12px;color:#8a8a8a;">表示件数
+          <select id="pageSizeSel" style="padding:7px 9px;border:1px solid #e6e6e6;border-radius:7px;font-size:13px;margin-left:4px;">
+            <option value="20">20件</option>
+            <option value="50" selected>50件</option>
+            <option value="100">100件</option>
+            <option value="200">200件</option>
+          </select>
+        </label>
+      </div>
+      <div class="tablewrap">
+        <table id="pivotTable">
+          <thead>
+            <tr>
+              <th class="l">画像</th>
+              <th class="l" data-k="name">商品名 / ショップ</th>
+              <th class="l" data-k="genre">ジャンル</th>
+              <th data-k="room">ROOM件数</th>
+              <th data-k="other">ROOM以外</th>
+              <th data-k="count">合計件数</th>
+              <th data-k="sales">合計売上</th>
+              <th data-k="reward">成果報酬</th>
+              <th data-k="rate">平均料率</th>
+            </tr>
+          </thead>
+          <tbody id="pivotBody"></tbody>
+        </table>
+      </div>
+      <div id="pager" style="display:flex;gap:8px;align-items:center;justify-content:center;margin-top:16px;font-size:13px;flex-wrap:wrap;"></div>
+    </div>
+
+  </div><!-- /result -->
+</div>
+
+<script>
+"use strict";
+
+/* ---------- CSVパーサ（カンマ・改行・引用符に対応） ---------- */
+function parseCSV(text){
+  const rows=[]; let row=[], field='', i=0, q=false;
+  if(text.charCodeAt(0)===0xFEFF) text=text.slice(1); // BOM除去
+  while(i<text.length){
+    const c=text[i];
+    if(q){
+      if(c==='"'){ if(text[i+1]==='"'){field+='"';i++;} else q=false; }
+      else field+=c;
+    }else{
+      if(c==='"') q=true;
+      else if(c===','){ row.push(field); field=''; }
+      else if(c==='\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else if(c==='\r'){ /* skip */ }
+      else field+=c;
+    }
+    i++;
+  }
+  if(field!==''||row.length){ row.push(field); rows.push(row); }
+  return rows;
+}
+
+/* ---------- 日付パース "2026/5/1 10:24" も "2026-02-01 13:22:33" も対応 ---------- */
+function parseDate(s){
+  if(!s) return null;
+  const m=s.trim().match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if(!m) return null;
+  return new Date(+m[1], +m[2]-1, +m[3]);
+}
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function yen(n){ return '¥'+Math.round(n).toLocaleString('ja-JP'); }
+
+/* ---------- 状態 ---------- */
+let RAW=[];            // 全行 {date,reward,rate,sales,genre,shop,name,room}
+let VIEW=[];           // フィルタ後
+let pieMode='sales';
+let sortKey='sales', sortDir=-1;
+let pageSize=50, curPage=1;
+
+/* ---------- 読み込み ---------- */
+const fileEl=document.getElementById('file');
+const btnRun=document.getElementById('btnRun');
+const btnClear=document.getElementById('btnClear');
+const statusEl=document.getElementById('status');
+let picked=[];
+
+fileEl.addEventListener('change',e=>{
+  picked=[...e.target.files];
+  if(picked.length){ btnRun.disabled=false; statusEl.className='status';
+    statusEl.textContent=picked.length+'個のファイルを選択中。まとめるを押してください'; }
+  else{ btnRun.disabled=true; }
+});
+
+btnRun.addEventListener('click',()=>{
+  if(!picked.length) return;
+  Promise.all(picked.map(f=>new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result);
+    r.onerror=()=>rej(new Error(f.name+' を読めませんでした'));
+    r.readAsText(f,'UTF-8');
+  }))).then(texts=>{
+    try{ ingestFiles(texts); fileEl.value=''; picked=[]; btnRun.disabled=true; }
+    catch(err){ statusEl.className='status err'; statusEl.textContent='読み込みエラー: '+err.message; }
+  }).catch(err=>{ statusEl.className='status err'; statusEl.textContent=err.message; });
+});
+
+btnClear.addEventListener('click',()=>{
+  if(!RAW.length){ statusEl.textContent='消去するデータがありません'; return; }
+  if(!confirm('蓄積した'+RAW.length+'件を全て消去します。よろしいですか？')) return;
+  RAW=[]; localStorage.removeItem(STORE_KEY);
+  document.getElementById('result').classList.add('hidden');
+  renderStoreInfo();
+  statusEl.className='status'; statusEl.textContent='データを消去しました';
+});
+
+document.getElementById('btnFetchImg').addEventListener('click',fetchImages);
+document.getElementById('btnStopImg').addEventListener('click',()=>{ stopFetch=true; });
+
+/* 起動時：保存済みデータ・画像キャッシュ・IDを復元 */
+window.addEventListener('DOMContentLoaded',()=>{
+  loadImgCache();
+  document.getElementById('appId').value=localStorage.getItem('rakuten_appid')||'';
+  document.getElementById('affId').value=localStorage.getItem('rakuten_affid')||'';
+  if(loadStore()){
+    document.getElementById('result').classList.remove('hidden');
+    setupFilters();
+    applyFilters();
+    renderStoreInfo();
+    statusEl.className='status ok';
+    statusEl.textContent='前回の蓄積データを読み込みました（'+RAW.length+'件）';
+  }
+});
+
+const STORE_KEY='rakuten_affi_data_v1';
+function rowKey(o){ return [o.dt,o.name,o.shop,o.sales,o.reward,o.room?1:0].join('§'); }
+
+/* ステータスコード → 表示ラベル（生CSVは 0/1/2、値がそのまま入る場合も想定） */
+function statusLabel(v){
+  const s=(v||'').trim();
+  if(s==='0'||s.startsWith('0')) return '未確定';
+  if(s==='1'||s.startsWith('1')) return '確定';
+  if(s==='2'||s.startsWith('2')) return '破棄';
+  return s||'不明';
+}
+
+/* 1ファイル分をパースして配列で返す（ヘッダー行は前置きがあっても自動検出） */
+function parseFile(text){
+  const rows=parseCSV(text);
+  if(rows.length<2) throw new Error('データがありません');
+
+  // 「発生日」と「商品名」を含む行を本物のヘッダーとして探す（前置きを飛ばす）
+  let hr=-1;
+  for(let r=0;r<rows.length;r++){
+    const cells=rows[r].map(x=>x.trim());
+    if(cells.includes('発生日') && cells.includes('商品名')){ hr=r; break; }
+  }
+  if(hr<0) throw new Error('ヘッダー行（発生日・商品名…）が見つかりません。楽天の注文別成果CSVか確認してください');
+
+  const head=rows[hr].map(x=>x.trim());
+  const idx={
+    date:head.indexOf('発生日'), reward:head.indexOf('成果報酬'), rate:head.indexOf('料率'),
+    sales:head.indexOf('売上金額'), genre:head.indexOf('ジャンル名'), shop:head.indexOf('ショップ名'),
+    name:head.indexOf('商品名'), status:head.indexOf('ステータス'), meas:head.indexOf('計測ID')
+  };
+  if(idx.date<0||idx.sales<0||idx.name<0) throw new Error('想定した列（発生日/売上金額/商品名）が見つかりません');
+
+  const out=[];
+  for(let r=hr+1;r<rows.length;r++){
+    const c=rows[r];
+    if(!c || c.length<=idx.sales) continue;
+    const dt=(c[idx.date]||'').trim();
+    const date=parseDate(dt);
+    if(!date) continue; // 日付が読めない行＝英語ヘッダー/前置き/空行 → スキップ
+    const sales=parseFloat((c[idx.sales]||'').replace(/[^\d.-]/g,''))||0;
+    const reward=parseFloat((c[idx.reward]||'').replace(/[^\d.-]/g,''))||0;
+    const name=(c[idx.name]||'').trim();
+    const meas=(c[idx.meas]||'').trim();
+    out.push({
+      dt, date, sales, reward,
+      genre:(c[idx.genre]||'').trim()||'（ジャンル未設定）',
+      shop:(c[idx.shop]||'').trim(),
+      name:name||'（商品名なし）',
+      status: idx.status>=0 ? statusLabel(c[idx.status]) : '',
+      room: meas==='楽天ROOM'
+    });
+  }
+  if(!out.length) throw new Error('データ行が読み取れませんでした（発生日が空の可能性）');
+  return out;
+}
+
+/* 複数ファイルを蓄積データにマージ（重複は自動排除） */
+function ingestFiles(texts){
+  let incoming=[];
+  texts.forEach(t=>{ incoming=incoming.concat(parseFile(t)); });
+  if(!incoming.length) throw new Error('有効なデータ行がありませんでした');
+
+  const seen=new Set(RAW.map(rowKey));
+  let added=0, dup=0;
+  incoming.forEach(o=>{
+    const k=rowKey(o);
+    if(seen.has(k)){ dup++; return; }
+    seen.add(k); RAW.push(o); added++;
+  });
+  saveStore();
+
+  statusEl.className='status ok';
+  statusEl.textContent=`取り込み完了：新規${added}件を追加${dup?`／重複${dup}件は自動スキップ`:''}`;
+  document.getElementById('result').classList.remove('hidden');
+  setupFilters();
+  applyFilters();
+  renderStoreInfo();
+}
+
+/* localStorage 保存・復元 */
+function saveStore(){
+  try{
+    const slim=RAW.map(o=>({dt:o.dt,sales:o.sales,reward:o.reward,genre:o.genre,shop:o.shop,name:o.name,status:o.status,room:o.room}));
+    localStorage.setItem(STORE_KEY, JSON.stringify(slim));
+  }catch(e){ statusEl.className='status err'; statusEl.textContent='保存に失敗（データ量が多すぎる可能性）: '+e.message; }
+}
+function loadStore(){
+  try{
+    const s=localStorage.getItem(STORE_KEY);
+    if(!s) return false;
+    const arr=JSON.parse(s);
+    RAW=arr.map(o=>({...o, date:parseDate(o.dt)}));
+    return RAW.length>0;
+  }catch(e){ return false; }
+}
+function renderStoreInfo(){
+  const el=document.getElementById('storeInfo');
+  if(!RAW.length){ el.textContent=''; return; }
+  const ds=RAW.map(r=>r.date).filter(Boolean).sort((a,b)=>a-b);
+  const range=ds.length?`（${ymd(ds[0])} 〜 ${ymd(ds[ds.length-1])}）`:'';
+  el.innerHTML=`💾 蓄積中：<b>${RAW.length}件</b> ${range}　※ブラウザに保存済み。次回開いても残ります`;
+}
+
+/* ---------- フィルタ ---------- */
+function setupFilters(){
+  const dates=RAW.map(r=>r.date).filter(Boolean).sort((a,b)=>a-b);
+  const min=dates[0], max=dates[dates.length-1];
+  document.getElementById('dFrom').value=ymd(min);
+  document.getElementById('dTo').value=ymd(max);
+  // ジャンル選択肢
+  const sel=document.getElementById('fGenre');
+  sel.innerHTML='<option value="">全て</option>';
+  [...new Set(RAW.map(r=>r.genre))].sort().forEach(g=>{
+    const o=document.createElement('option'); o.value=g; o.textContent=g; sel.appendChild(o);
+  });
+  // イベント
+  ['dFrom','dTo','fGenre','fRoom','fStatus'].forEach(id=>document.getElementById(id).onchange=applyFilters);
+  document.querySelectorAll('.rangebtns button').forEach(b=>b.onclick=()=>{
+    const min=dates[0], max=dates[dates.length-1];
+    const set=(f,t)=>{document.getElementById('dFrom').value=ymd(f);document.getElementById('dTo').value=ymd(t);};
+    const r=b.dataset.r;
+    if(r==='all') set(min,max);
+    else if(r==='h1'){ const mid=new Date(min); mid.setDate(min.getDate()+14); set(min,mid); }
+    else if(r==='h2'){ const mid=new Date(min); mid.setDate(min.getDate()+15); set(mid,max); }
+    else { const f=new Date(max); f.setDate(max.getDate()-(+r-1)); set(f<min?min:f,max); }
+    applyFilters();
+  });
+  document.getElementById('search').oninput=()=>{ curPage=1; renderTable(); };
+  const sortSel=document.getElementById('sortSel');
+  sortSel.value=sortKey;
+  sortSel.onchange=()=>{
+    sortKey=sortSel.value;
+    sortDir=(sortKey==='name'||sortKey==='genre')?1:-1;
+    curPage=1; renderTable();
+  };
+  const psSel=document.getElementById('pageSizeSel');
+  psSel.value=String(pageSize);
+  psSel.onchange=()=>{ pageSize=+psSel.value; curPage=1; renderTable(); };
+  document.querySelectorAll('#pieToggle button').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('#pieToggle button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); pieMode=b.dataset.m; renderPie();
+  });
+  document.querySelectorAll('#pivotTable th').forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k; if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=(k==='name'||k==='genre')?1:-1;}
+    const ss=document.getElementById('sortSel'); if([...ss.options].some(o=>o.value===k)) ss.value=k;
+    renderTable();
+  });
+}
+
+function applyFilters(){
+  const from=new Date(document.getElementById('dFrom').value);
+  const to=new Date(document.getElementById('dTo').value); to.setHours(23,59,59);
+  const g=document.getElementById('fGenre').value;
+  const room=document.getElementById('fRoom').value;
+  const st=document.getElementById('fStatus').value;
+  VIEW=RAW.filter(r=>{
+    if(r.date){ if(r.date<from||r.date>to) return false; }
+    if(g && r.genre!==g) return false;
+    if(room==='room' && !r.room) return false;
+    if(room==='other' && r.room) return false;
+    if(st==='除破棄'){ if(r.status==='破棄') return false; }
+    else if(st && r.status!==st) return false;
+    return true;
+  });
+  curPage=1;
+  renderKPIs(); renderDaily(); renderPie(); renderTable();
+}
+
+/* ---------- KPI ---------- */
+function renderKPIs(){
+  const sales=VIEW.reduce((s,r)=>s+r.sales,0);
+  const reward=VIEW.reduce((s,r)=>s+r.reward,0);
+  document.getElementById('kpiSales').textContent=yen(sales);
+  document.getElementById('kpiReward').textContent=yen(reward);
+  document.getElementById('kpiCount').textContent=VIEW.length.toLocaleString('ja-JP')+' 件';
+  document.getElementById('kpiRate').textContent=(sales?(reward/sales*100):0).toFixed(2)+' %';
+}
+
+/* ---------- 日別グラフ（SVG棒） ---------- */
+function renderDaily(){
+  const map={};
+  VIEW.forEach(r=>{ if(!r.date) return; const k=ymd(r.date); map[k]=(map[k]||0)+r.sales; });
+  const keys=Object.keys(map).sort();
+  const box=document.getElementById('dailyChart');
+  if(!keys.length){ box.innerHTML='<div class="empty">この期間のデータはありません</div>'; return; }
+  const W=1100,H=260,pad={l:70,r:10,t:14,b:40};
+  const iw=W-pad.l-pad.r, ih=H-pad.t-pad.b;
+  const max=Math.max(...keys.map(k=>map[k]))||1;
+  const bw=iw/keys.length;
+  let bars='',labels='';
+  keys.forEach((k,i)=>{
+    const h=map[k]/max*ih, x=pad.l+i*bw, y=pad.t+ih-h;
+    bars+=`<rect x="${x+bw*0.15}" y="${y}" width="${bw*0.7}" height="${h}" fill="#f06292" rx="2"><title>${k}\n${yen(map[k])}</title></rect>`;
+    if(keys.length<=31 && (i%Math.ceil(keys.length/15)===0)){
+      const d=k.slice(5).replace('-','/');
+      labels+=`<text x="${x+bw/2}" y="${H-18}" font-size="11" fill="#999" text-anchor="middle">${d}</text>`;
+    }
+  });
+  // Y軸目盛
+  let yaxis='';
+  for(let t=0;t<=4;t++){ const v=max*t/4, y=pad.t+ih-(ih*t/4);
+    yaxis+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#eee"/>`+
+           `<text x="${pad.l-8}" y="${y+4}" font-size="10" fill="#aaa" text-anchor="end">${yen(v)}</text>`; }
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;">${yaxis}${bars}${labels}</svg>`;
+}
+
+/* ---------- ジャンル別 円グラフ ---------- */
+const PIE_COLORS=['#e93a7d','#29a7d3','#f4794a','#7b93a3','#25b6a8','#f6c744','#9b6dd6','#8bc34a','#ba68c8','#4db6ac','#ff8a65','#a1887f'];
+function genreAgg(){
+  const m={};
+  VIEW.forEach(r=>{ const g=r.genre; if(!m[g]) m[g]={sales:0,count:0}; m[g].sales+=r.sales; m[g].count++; });
+  return Object.entries(m).map(([g,v])=>({g,sales:v.sales,count:v.count}))
+    .sort((a,b)=>b[pieMode]-a[pieMode]);
+}
+function renderPie(){
+  const data=genreAgg();
+  const total=data.reduce((s,d)=>s+d[pieMode],0)||1;
+  // 上位8＋その他
+  let items=data.slice(0,8);
+  const rest=data.slice(8);
+  if(rest.length){ items.push({g:'その他',sales:rest.reduce((s,d)=>s+d.sales,0),count:rest.reduce((s,d)=>s+d.count,0)}); }
+  const R=95,C=110;
+  let ang=-Math.PI/2, paths='';
+  items.forEach((d,i)=>{
+    const frac=d[pieMode]/total, a2=ang+frac*Math.PI*2;
+    const x1=C+R*Math.cos(ang), y1=C+R*Math.sin(ang);
+    const x2=C+R*Math.cos(a2), y2=C+R*Math.sin(a2);
+    const large=frac>0.5?1:0;
+    const col=PIE_COLORS[i%PIE_COLORS.length].replace(' ','');
+    if(frac>0.9999){ paths+=`<circle cx="${C}" cy="${C}" r="${R}" fill="${col}"/>`; }
+    else paths+=`<path d="M${C} ${C} L${x1} ${y1} A${R} ${R} 0 ${large} 1 ${x2} ${y2} Z" fill="${col}"><title>${d.g}\n${(frac*100).toFixed(1)}%</title></path>`;
+    ang=a2;
+  });
+  document.getElementById('pieChart').innerHTML=`<svg viewBox="0 0 220 220" width="220" height="220">${paths}</svg>`;
+  // 凡例
+  const unit=pieMode==='sales'?(v=>yen(v)):(v=>v+'件');
+  document.getElementById('pieLegend').innerHTML=items.map((d,i)=>{
+    const col=PIE_COLORS[i%PIE_COLORS.length].replace(' ','');
+    const pv=(d[pieMode]/total*100).toFixed(1);
+    return `<div class="row"><span class="sw" style="background:${col}"></span>${d.g}
+      <span class="pv">${unit(d[pieMode])}（${pv}%）</span></div>`;
+  }).join('');
+}
+
+/* ---------- 商品別 集計表 ---------- */
+function pivotAgg(){
+  const m={};
+  VIEW.forEach(r=>{
+    const key=r.name+''+r.shop;
+    if(!m[key]) m[key]={name:r.name,shop:r.shop,genre:r.genre,room:0,other:0,count:0,sales:0,reward:0};
+    const o=m[key];
+    o.count++; o.sales+=r.sales; o.reward+=r.reward;
+    if(r.room) o.room++; else o.other++;
+  });
+  return Object.values(m).map(o=>({...o, rate:o.sales?o.reward/o.sales*100:0}));
+}
+/* 商品ページ/サービスへのリンク（API取得済みなら本物リンク、無ければ検索で補完） */
+function productUrl(o){
+  if(LINK_CACHE[o.name]) return LINK_CACHE[o.name];
+  if(o.shop==='楽天トラベル') return 'https://travel.rakuten.co.jp/';
+  if(o.shop==='楽天GORA')   return 'https://gora.golf.rakuten.co.jp/';
+  const noName=(o.name==='（商品名なし）');
+  const q=noName ? (o.shop||'') : o.name;
+  return 'https://search.rakuten.co.jp/search/mall/'+encodeURIComponent(q);
+}
+/* 表示名（商品名が無いサービスはショップ名で補う） */
+function displayName(o){
+  if(o.name==='（商品名なし）'){
+    if(o.shop==='楽天トラベル') return '楽天トラベル（宿泊予約）';
+    if(o.shop==='楽天GORA')   return '楽天GORA（ゴルフ予約）';
+    return (o.shop||'（名称なし）')+'（サービス）';
+  }
+  return o.name;
+}
+/* サムネイル（画像URLがあれば表示、無ければショップ頭文字のプレースホルダ） */
+function thumbHtml(o){
+  const img=IMG_CACHE[o.name];
+  if(img) return `<span class="thumb"><img src="${esc(img)}" loading="lazy" alt=""></span>`;
+  const initial=esc((o.shop||o.name||'?').trim().charAt(0)||'?');
+  return `<span class="thumb" title="画像未取得">${initial}</span>`;
+}
+let IMG_CACHE={};   // 商品名 -> 画像URL
+let LINK_CACHE={};  // 商品名 -> 商品/アフィリエイトURL
+const IMG_KEY='rakuten_affi_img_v1';
+
+function loadImgCache(){
+  try{ const s=localStorage.getItem(IMG_KEY); if(s){ const o=JSON.parse(s); IMG_CACHE=o.img||{}; LINK_CACHE=o.link||{}; } }catch(e){}
+}
+function saveImgCache(){
+  try{ localStorage.setItem(IMG_KEY, JSON.stringify({img:IMG_CACHE,link:LINK_CACHE})); }catch(e){}
+}
+
+/* ---- 楽天 商品検索API（JSONPでCORS回避・完全ローカルで動く） ---- */
+let __jsonpN=0, stopFetch=false;
+function jsonp(url,timeout=8000){
+  return new Promise((resolve,reject)=>{
+    const cb='__rk_cb_'+(++__jsonpN);
+    const s=document.createElement('script');
+    let done=false;
+    const cleanup=()=>{ delete window[cb]; s.remove(); };
+    const timer=setTimeout(()=>{ if(!done){done=true;cleanup();reject(new Error('timeout'));} }, timeout);
+    window[cb]=(data)=>{ if(done)return; done=true; clearTimeout(timer); cleanup(); resolve(data); };
+    s.onerror=()=>{ if(done)return; done=true; clearTimeout(timer); cleanup(); reject(new Error('network')); };
+    s.src=url+(url.includes('?')?'&':'?')+'callback='+cb;
+    document.body.appendChild(s);
+  });
+}
+function cleanKeyword(name){
+  return name.replace(/【[^】]*】/g,' ').replace(/＼[^／]*／/g,' ').replace(/\[[^\]]*\]/g,' ')
+             .replace(/（[^）]*）/g,' ').replace(/\([^)]*\)/g,' ')
+             .replace(/[★☆♪＊*※◆■□●○▼▲◎♡❤✨]/g,' ')
+             .replace(/[|｜/／、,]/g,' ').replace(/\s+/g,' ').trim().slice(0,60);
+}
+/* 検索キーワードの候補：フル→型番らしい語(英数字混在)単独→先頭2語。0件なら順に緩めて再検索 */
+function keywordVariants(name){
+  const full=cleanKeyword(name);
+  const toks=full.split(' ').filter(Boolean);
+  const vs=[full];
+  const model=toks.find(t=>/[A-Za-z]/.test(t)&&/[0-9]/.test(t)&&t.length>=4);
+  if(model) vs.push(model);
+  if(toks.length>2) vs.push(toks.slice(0,2).join(' '));
+  return [...new Set(vs.map(v=>v.trim()).filter(Boolean))];
+}
+function buildSearchUrl(appId,affId,kw){
+  return 'https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601'
+    +'?format=json&hits=1&applicationId='+encodeURIComponent(appId)
+    +(affId?'&affiliateId='+encodeURIComponent(affId):'')
+    +'&keyword='+encodeURIComponent(kw);
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+async function fetchImages(){
+  const appId=document.getElementById('appId').value.trim();
+  const affId=document.getElementById('affId').value.trim();
+  const apiSt=document.getElementById('apiStatus');
+  if(!appId){ apiSt.className='status err'; apiSt.textContent='アプリIDを入力してください'; return; }
+  localStorage.setItem('rakuten_appid',appId);
+  localStorage.setItem('rakuten_affid',affId);
+
+  // 対象＝重複を除いた商品名（トラベル/GORA/名無し/取得済みは除外）
+  const names=[...new Set(RAW.filter(r=>
+      r.shop!=='楽天トラベル' && r.shop!=='楽天GORA' && r.name!=='（商品名なし）'
+    ).map(r=>r.name))].filter(n=>!IMG_CACHE[n]);
+
+  if(!names.length){ apiSt.className='status ok'; apiSt.textContent='新たに取得する商品はありません（全てキャッシュ済み）'; return; }
+
+  stopFetch=false;
+  document.getElementById('btnFetchImg').disabled=true;
+  document.getElementById('btnStopImg').style.display='';
+  let ok=0, miss=0;
+  for(let i=0;i<names.length;i++){
+    if(stopFetch) break;
+    const name=names[i];
+    apiSt.className='status'; apiSt.textContent=`取得中 ${i+1}/${names.length}（${ok}件取得）…`;
+    const variants=keywordVariants(name);
+    let gotImg=false;
+    for(let v=0; v<variants.length; v++){
+      if(stopFetch) break;
+      let d;
+      try{ d=await jsonp(buildSearchUrl(appId,affId,variants[v])); }
+      catch(e){ await sleep(1100); continue; } // 通信失敗→次の候補で再試行
+      // 楽天がリクエスト自体を拒否（ID不備 or 許可Webサイト未登録）→全件同じなので即中断して原因を表示
+      if(d && d.error){
+        apiSt.className='status err';
+        apiSt.textContent='楽天APIに拒否されました：「'+(d.error_description||d.error)+'」／ 主因は (1)アプリIDの誤り (2)このページのドメインを楽天アプリの「許可されたWebサイト」に未登録、のどちらかです。';
+        saveImgCache(); renderTable();
+        document.getElementById('btnFetchImg').disabled=false;
+        document.getElementById('btnStopImg').style.display='none';
+        return;
+      }
+      const it=d && d.Items && d.Items[0] && d.Items[0].Item;
+      await sleep(1100); // 楽天APIの制限(約1req/秒)に配慮
+      if(!it) continue; // 0件→キーワードを緩めて再検索
+      const img=(it.mediumImageUrls&&it.mediumImageUrls[0]&&it.mediumImageUrls[0].imageUrl)||
+                (it.smallImageUrls&&it.smallImageUrls[0]&&it.smallImageUrls[0].imageUrl)||'';
+      if(img){ IMG_CACHE[name]=img.replace(/\?_ex=\d+x\d+/,'?_ex=128x128'); gotImg=true; }
+      LINK_CACHE[name]=it.affiliateUrl || it.itemUrl || LINK_CACHE[name];
+      break; // 商品が見つかったら確定（画像の有無に関わらず、それ以上緩めない）
+    }
+    if(gotImg) ok++; else miss++;
+    if((i%5)===0){ saveImgCache(); renderTable(); }
+  }
+  saveImgCache(); renderTable();
+  document.getElementById('btnFetchImg').disabled=false;
+  document.getElementById('btnStopImg').style.display='none';
+  apiSt.className='status ok';
+  apiSt.textContent=`完了：画像${ok}件取得／${miss}件は該当なし${stopFetch?'（中止）':''}`;
+}
+
+function renderTable(){
+  const q=document.getElementById('search').value.trim();
+  let data=pivotAgg();
+  if(q) data=data.filter(o=>(o.name+o.shop).toLowerCase().includes(q.toLowerCase()));
+  data.sort((a,b)=>{
+    let av=a[sortKey],bv=b[sortKey];
+    if(typeof av==='string') return av.localeCompare(bv,'ja')*sortDir;
+    return (av-bv)*sortDir;
+  });
+  const total=data.length;
+  document.getElementById('tblCount').textContent='（'+total+'商品）';
+  const body=document.getElementById('pivotBody');
+  if(!total){ body.innerHTML='<tr><td colspan="9" class="empty">該当データがありません</td></tr>';
+    document.getElementById('pager').innerHTML=''; return; }
+
+  const pages=Math.max(1,Math.ceil(total/pageSize));
+  if(curPage>pages) curPage=pages;
+  const start=(curPage-1)*pageSize;
+  const pageData=data.slice(start,start+pageSize);
+
+  const groupByGenre=(sortKey==='genre');
+  let html='', lastG=null;
+  pageData.forEach(o=>{
+    if(groupByGenre && o.genre!==lastG){
+      html+=`<tr class="genrehead"><td colspan="9">■ ${esc(o.genre)}</td></tr>`; lastG=o.genre;
+    }
+    const url=productUrl(o);
+    html+=`<tr>
+      <td class="l">${thumbHtml(o)}</td>
+      <td class="l name"><a href="${url}" target="_blank" rel="noopener">${esc(displayName(o))}</a>
+        <div style="color:#aaa;font-size:11px;">${esc(o.shop)}</div></td>
+      <td class="l">${esc(o.genre)}</td>
+      <td class="num">${o.room?('<span class="roomtag">'+o.room+'</span>'):'0'}</td>
+      <td class="num">${o.other}</td>
+      <td class="num">${o.count}</td>
+      <td class="num">${yen(o.sales)}</td>
+      <td class="num">${yen(o.reward)}</td>
+      <td class="num">${o.rate.toFixed(1)}%</td>
+    </tr>`;
+  });
+  body.innerHTML=html;
+  renderPager(total,pages,start,pageData.length);
+}
+
+function renderPager(total,pages,start,shown){
+  const p=document.getElementById('pager');
+  if(pages<=1){ p.innerHTML=`<span style="color:#999;">全${total}商品を表示</span>`; return; }
+  const go=n=>{ curPage=Math.min(Math.max(1,n),pages); renderTable(); window.scrollTo({top:document.getElementById('pivotTable').offsetTop-20,behavior:'smooth'}); };
+  window.__pg=go;
+  // ページ番号（現在の前後2つ＋端）
+  const nums=new Set([1,pages,curPage,curPage-1,curPage+1,curPage-2,curPage+2]);
+  const list=[...nums].filter(n=>n>=1&&n<=pages).sort((a,b)=>a-b);
+  let btns='';
+  let prev=0;
+  list.forEach(n=>{
+    if(n-prev>1) btns+='<span style="color:#ccc;">…</span>';
+    btns+=`<button onclick="__pg(${n})" ${n===curPage?'class="cur" disabled':''}>${n}</button>`;
+    prev=n;
+  });
+  p.innerHTML=
+    `<span style="color:#999;margin-right:6px;">${start+1}〜${start+shown} / 全${total}商品</span>`+
+    `<button onclick="__pg(${curPage-1})" ${curPage===1?'disabled':''}>‹ 前へ</button>`+
+    btns+
+    `<button onclick="__pg(${curPage+1})" ${curPage===pages?'disabled':''}>次へ ›</button>`;
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+</script>
+</body>
+</html>
