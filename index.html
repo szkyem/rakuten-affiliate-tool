@@ -175,13 +175,14 @@
       <div class="apibox">
         <div class="apititle">🖼️ 商品画像・リンクを取得（楽天API）</div>
         <div class="apirow">
-          <input type="text" id="appId" class="apiinput" placeholder="楽天アプリID（必須）">
+          <input type="text" id="appId" class="apiinput" placeholder="アプリID（applicationId／必須）">
+          <input type="text" id="accessKey" class="apiinput" placeholder="アクセスキー（accessKey／必須）">
           <input type="text" id="affId" class="apiinput" placeholder="アフィリエイトID（任意）">
           <button class="act" id="btnFetchImg">画像・リンクを取得 ▶</button>
           <button class="ghost" id="btnStopImg" style="display:none;">中止</button>
           <span class="status" id="apiStatus"></span>
         </div>
-        <div class="apihelp">アプリIDは <b>楽天ウェブサービス（webservice.rakuten.co.jp）</b> で無料取得。取得結果は保存され、次回は未取得の商品だけ取りに行きます。楽天トラベル/GORA・商品名なしは対象外。</div>
+        <div class="apihelp"><b>楽天ウェブサービス（webservice.rakuten.co.jp）</b>で無料取得した「アプリID」と「アクセスキー」を入力（2026年の新API仕様）。楽天アプリの「許可されたWebサイト」に、このページのドメイン（<code id="curHost"></code>）を登録しておくこと。取得結果は保存され、次回は未取得の商品だけ取りに行きます。楽天トラベル/GORA・商品名なしは対象外。</div>
       </div>
       <div style="margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
         <input type="text" id="search" class="searchbox" placeholder="商品名・ショップ名で絞り込み">
@@ -315,7 +316,9 @@ document.getElementById('btnStopImg').addEventListener('click',()=>{ stopFetch=t
 window.addEventListener('DOMContentLoaded',()=>{
   loadImgCache();
   document.getElementById('appId').value=localStorage.getItem('rakuten_appid')||'';
+  document.getElementById('accessKey').value=localStorage.getItem('rakuten_accesskey')||'';
   document.getElementById('affId').value=localStorage.getItem('rakuten_affid')||'';
+  const ch=document.getElementById('curHost'); if(ch) ch.textContent=location.hostname||'(ローカル)';
   if(loadStore()){
     document.getElementById('result').classList.remove('hidden');
     setupFilters();
@@ -667,20 +670,30 @@ function keywordVariants(name){
   if(toks.length>2) vs.push(toks.slice(0,2).join(' '));
   return [...new Set(vs.map(v=>v.trim()).filter(Boolean))];
 }
-function buildSearchUrl(appId,affId,kw){
-  return 'https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601'
+function buildSearchUrl(appId,accessKey,affId,kw){
+  // 2026年の新API：openapi.rakuten.co.jp／applicationId＋accessKey必須／CORS対応でfetch可
+  return 'https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601'
     +'?format=json&hits=1&applicationId='+encodeURIComponent(appId)
+    +'&accessKey='+encodeURIComponent(accessKey)
     +(affId?'&affiliateId='+encodeURIComponent(affId):'')
     +'&keyword='+encodeURIComponent(kw);
+}
+/* 新APIはCORS対応（access-control-allow-origin:*）なのでfetchで直接取得。RefererはブラウザがOrigin単位で自動送信 */
+async function apiGetJson(url){
+  const r=await fetch(url,{referrerPolicy:'strict-origin-when-cross-origin'});
+  return r.json();
 }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 async function fetchImages(){
   const appId=document.getElementById('appId').value.trim();
+  const accessKey=document.getElementById('accessKey').value.trim();
   const affId=document.getElementById('affId').value.trim();
   const apiSt=document.getElementById('apiStatus');
-  if(!appId){ apiSt.className='status err'; apiSt.textContent='アプリIDを入力してください'; return; }
+  if(!appId){ apiSt.className='status err'; apiSt.textContent='アプリID（applicationId）を入力してください'; return; }
+  if(!accessKey){ apiSt.className='status err'; apiSt.textContent='アクセスキー（accessKey）を入力してください（2026年の新API仕様で必須）'; return; }
   localStorage.setItem('rakuten_appid',appId);
+  localStorage.setItem('rakuten_accesskey',accessKey);
   localStorage.setItem('rakuten_affid',affId);
 
   // 対象＝重複を除いた商品名（トラベル/GORA/名無し/取得済みは除外）
@@ -703,12 +716,14 @@ async function fetchImages(){
     for(let v=0; v<variants.length; v++){
       if(stopFetch) break;
       let d;
-      try{ d=await jsonp(buildSearchUrl(appId,affId,variants[v])); }
+      try{ d=await apiGetJson(buildSearchUrl(appId,accessKey,affId,variants[v])); }
       catch(e){ await sleep(1100); continue; } // 通信失敗→次の候補で再試行
-      // 楽天がリクエスト自体を拒否（ID不備 or 許可Webサイト未登録）→全件同じなので即中断して原因を表示
-      if(d && d.error){
+      // 楽天がリクエスト自体を拒否（ID/キー不備 or 許可Webサイト未登録）→全件同じなので即中断して原因を表示
+      const apiErr = d && (d.errors || d.error);
+      if(apiErr){
+        const msg = (d.errors && d.errors.errorMessage) || d.error_description || d.error || 'エラー';
         apiSt.className='status err';
-        apiSt.textContent='楽天APIに拒否されました：「'+(d.error_description||d.error)+'」／ 主因は (1)アプリIDの誤り (2)このページのドメインを楽天アプリの「許可されたWebサイト」に未登録、のどちらかです。';
+        apiSt.textContent='楽天APIに拒否されました：「'+msg+'」／ 主因は (1)アプリID/アクセスキーの誤り (2)このページのドメイン（'+(location.hostname||'ローカル')+'）を楽天アプリの「許可されたWebサイト」に未登録 (3)アプリのAPIスコープで「楽天市場API」未選択、のいずれかです。';
         saveImgCache(); renderTable();
         document.getElementById('btnFetchImg').disabled=false;
         document.getElementById('btnStopImg').style.display='none';
