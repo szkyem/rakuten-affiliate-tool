@@ -661,6 +661,12 @@ function cleanKeyword(name){
              .replace(/[|｜/／、,]/g,' ').replace(/\s+/g,' ').trim().slice(0,60);
 }
 /* 検索キーワードの候補：フル→型番らしい語(英数字混在)単独→先頭2語。0件なら順に緩めて再検索 */
+function sanitizeKw(kw){
+  // 楽天APIは「半角1文字だけの語」を拒否(keyword is not valid)。全角は1文字でもOK
+  return kw.split(' ').filter(Boolean)
+           .filter(t=> t.length>=2 || /[^\x00-\x7F]/.test(t))
+           .join(' ').trim();
+}
 function keywordVariants(name){
   const full=cleanKeyword(name);
   const toks=full.split(' ').filter(Boolean);
@@ -668,7 +674,8 @@ function keywordVariants(name){
   const model=toks.find(t=>/[A-Za-z]/.test(t)&&/[0-9]/.test(t)&&t.length>=4);
   if(model) vs.push(model);
   if(toks.length>2) vs.push(toks.slice(0,2).join(' '));
-  return [...new Set(vs.map(v=>v.trim()).filter(Boolean))];
+  // 各候補をサニタイズ（半角1文字語を除去）し、有効なものだけ返す
+  return [...new Set(vs.map(sanitizeKw).filter(v=>v.length>0))];
 }
 function buildSearchUrl(appId,accessKey,affId,kw){
   // 2026年の新API：openapi.rakuten.co.jp／applicationId＋accessKey必須／CORS対応でfetch可
@@ -718,16 +725,20 @@ async function fetchImages(){
       let d;
       try{ d=await apiGetJson(buildSearchUrl(appId,accessKey,affId,variants[v])); }
       catch(e){ await sleep(1100); continue; } // 通信失敗→次の候補で再試行
-      // 楽天がリクエスト自体を拒否（ID/キー不備 or 許可Webサイト未登録）→全件同じなので即中断して原因を表示
       const apiErr = d && (d.errors || d.error);
       if(apiErr){
         const msg = (d.errors && d.errors.errorMessage) || d.error_description || d.error || 'エラー';
-        apiSt.className='status err';
-        apiSt.textContent='楽天APIに拒否されました：「'+msg+'」／ 主因は (1)アプリID/アクセスキーの誤り (2)このページのドメイン（'+(location.hostname||'ローカル')+'）を楽天アプリの「許可されたWebサイト」に未登録 (3)アプリのAPIスコープで「楽天市場API」未選択、のいずれかです。';
-        saveImgCache(); renderTable();
-        document.getElementById('btnFetchImg').disabled=false;
-        document.getElementById('btnStopImg').style.display='none';
-        return;
+        // 認証・ドメイン・スコープ系＝全件共通なので即中断。それ以外(キーワード無効等)は該当商品だけスキップ
+        const fatal = /applicationId|accessKey|referrer|referer|scope|unauthorized|forbidden|invalid_?token|IP\b/i.test(msg);
+        if(fatal){
+          apiSt.className='status err';
+          apiSt.textContent='楽天APIに拒否されました：「'+msg+'」／ 主因は (1)アプリID/アクセスキーの誤り (2)このページのドメイン（'+(location.hostname||'ローカル')+'）を楽天アプリの「許可されたWebサイト」に未登録 (3)アプリのAPIスコープで「楽天市場API」未選択、のいずれかです。';
+          saveImgCache(); renderTable();
+          document.getElementById('btnFetchImg').disabled=false;
+          document.getElementById('btnStopImg').style.display='none';
+          return;
+        }
+        await sleep(1100); continue; // 個別エラー→次の候補/商品へ
       }
       const it=d && d.Items && d.Items[0] && d.Items[0].Item;
       await sleep(1100); // 楽天APIの制限(約1req/秒)に配慮
