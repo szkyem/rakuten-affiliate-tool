@@ -714,7 +714,7 @@ async function fetchImages(){
   stopFetch=false;
   document.getElementById('btnFetchImg').disabled=true;
   document.getElementById('btnStopImg').style.display='';
-  let ok=0, miss=0;
+  let ok=0, miss=0, apiDelay=350; // 基本ペース。429(混雑)に当たると自動で延長される
   for(let i=0;i<names.length;i++){
     if(stopFetch) break;
     const name=names[i];
@@ -723,9 +723,21 @@ async function fetchImages(){
     let gotImg=false;
     for(let v=0; v<variants.length; v++){
       if(stopFetch) break;
-      let d;
-      try{ d=await apiGetJson(buildSearchUrl(appId,accessKey,affId,variants[v])); }
-      catch(e){ await sleep(1100); continue; } // 通信失敗→次の候補で再試行
+      let d=null;
+      // レート制限(429)に当たったら待機を伸ばして同じ問い合わせを数回まで再試行（＝そのキーで出せる最速に自動調整）
+      for(let attempt=0; attempt<5; attempt++){
+        if(stopFetch) break;
+        try{ d=await apiGetJson(buildSearchUrl(appId,accessKey,affId,variants[v])); }
+        catch(e){ d=null; break; }
+        const ec=d && d.errors && d.errors.errorCode;
+        const em=(d && d.errors && d.errors.errorMessage)||'';
+        if(ec===429 || /too many|rate limit|\b429\b/i.test(em)){
+          apiDelay=Math.min(Math.round(apiDelay*1.7), 2000); // 混雑→ペースを落とす
+          await sleep(apiDelay); continue;
+        }
+        break; // 正常 or レート制限以外のエラー
+      }
+      if(!d){ await sleep(apiDelay); continue; } // 通信失敗→次の候補で再試行
       const apiErr = d && (d.errors || d.error);
       if(apiErr){
         const msg = (d.errors && d.errors.errorMessage) || d.error_description || d.error || 'エラー';
@@ -739,10 +751,10 @@ async function fetchImages(){
           document.getElementById('btnStopImg').style.display='none';
           return;
         }
-        await sleep(1100); continue; // 個別エラー→次の候補/商品へ
+        await sleep(apiDelay); continue; // 個別エラー→次の候補/商品へ
       }
       const it=d && d.Items && d.Items[0] && d.Items[0].Item;
-      await sleep(1100); // 楽天APIの制限(約1req/秒)に配慮
+      await sleep(apiDelay); // ペースに配慮（混雑時は自動延長）
       if(!it) continue; // 0件→キーワードを緩めて再検索
       const img=(it.mediumImageUrls&&it.mediumImageUrls[0]&&it.mediumImageUrls[0].imageUrl)||
                 (it.smallImageUrls&&it.smallImageUrls[0]&&it.smallImageUrls[0].imageUrl)||'';
