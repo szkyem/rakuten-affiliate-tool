@@ -290,9 +290,9 @@ btnRun.addEventListener('click',()=>{
   if(!picked.length) return;
   Promise.all(picked.map(f=>new Promise((res,rej)=>{
     const r=new FileReader();
-    r.onload=()=>res(r.result);
+    r.onload=()=>res(decodeCsv(r.result));
     r.onerror=()=>rej(new Error(f.name+' を読めませんでした'));
-    r.readAsText(f,'UTF-8');
+    r.readAsArrayBuffer(f); // 文字コード自動判別のためバイト列で読む
   }))).then(texts=>{
     try{ ingestFiles(texts); fileEl.value=''; picked=[]; btnRun.disabled=true; }
     catch(err){ statusEl.className='status err'; statusEl.textContent='読み込みエラー: '+err.message; }
@@ -336,6 +336,23 @@ function statusLabel(v){
   if(s==='1'||s.startsWith('1')) return '確定';
   if(s==='2'||s.startsWith('2')) return '破棄';
   return s||'不明';
+}
+
+/* 文字コード自動判別：UTF-8(BOM有無)で読み、化けていればShift_JIS(Excel保存)で読み直す */
+function decodeCsv(buf){
+  const bytes=new Uint8Array(buf);
+  if(bytes.length>=3 && bytes[0]===0xEF && bytes[1]===0xBB && bytes[2]===0xBF){
+    return new TextDecoder('utf-8').decode(bytes.subarray(3)); // UTF-8 BOM付き
+  }
+  const utf8=new TextDecoder('utf-8',{fatal:false}).decode(bytes);
+  const utf8ok = utf8.includes('発生日') || utf8.includes('商品名');
+  if(utf8ok && !/�/.test(utf8)) return utf8; // きれいなUTF-8
+  try{
+    const sjis=new TextDecoder('shift_jis').decode(bytes); // Excel等のCP932
+    if(sjis.includes('発生日')||sjis.includes('商品名')) return sjis;
+    if(!utf8ok && !/�/.test(sjis)) return sjis;
+  }catch(e){}
+  return utf8;
 }
 
 /* 1ファイル分をパースして配列で返す（ヘッダー行は前置きがあっても自動検出） */
